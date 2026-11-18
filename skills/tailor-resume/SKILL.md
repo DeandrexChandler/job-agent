@@ -15,6 +15,21 @@ Tools: `tectonic` builds the PDF. PyMuPDF (`python3 -m pip install pymupdf`) run
 - The default layout is `../job-setup/assets/master-resume.tex`. A Markdown master renders in the same layout through `scripts/md_to_tex.py`. An older Jake's-template `.tex` converts with `python3 scripts/apply_uniform.py file.tex`.
 - A tailored copy is a new file built for one posting. Tailoring never edits the master.
 
+## Resume mode (read this first)
+
+`resume_mode` in `preferences.yaml` decides how much a copy may change. When it is `select_only` (the default in this fork), the rules in this section override everything below.
+
+**select_only: the user's words, the agent's choices.** A tailored copy is built only by choosing and ordering what the user already wrote in the master, printed page or alternates:
+- Allowed: re-rank projects and entries, pick which bullets show (at most 3 per entry), order bullets, swap in alternate bullets, entries, projects and Skills rows, drop the least relevant entry, reorder and trim Skills terms.
+- Not allowed: changing a single word of a bullet, merging or splitting bullets, adding a fill word to stretch a line, adding a Skills term that is not in one of the master's Skills rows, editing headings, dates or the template.
+- The content rules below about rewording, framing, line-fill words, identity phrases, hackathon wording and the "Each opening verb at most twice" rule do not apply. They are checked as warnings only.
+- Coverage is still measured and reported, but there is no 95% target. A missing term goes in the "Terms to confirm" list as usual; the user writes any new bullet or Skills term into the master themselves, and the next build can choose it.
+- Run every check and the gate with `--select-only`, and the gate with `--min-fill <resume_min_fill>` (default 0 in this mode, so the user's own line lengths are not judged). `VERBATIM` fails any bullet that is not word for word one of the master's; `SKILLTERM` fails a Skills term the master never lists.
+- If the gate still fails on layout (two pages, a hanging line, a gap at the bottom), fix it only by choosing differently: swap an alternate, drop or restore a bullet, swap a project, or use a shorter Skills row from the master. Try at most three such rebuilds. If none passes, use the general resume (the master's printed page, which already passed the gate) for this job and say so in the review file. Never reword to fix layout.
+- The review file still shows the before and after: in this mode it lists which bullets, alternates and projects were chosen and why, instead of rewritten text. The defense sheet is only needed for alternates swapped in.
+
+`resume_mode: rewrite` restores the upstream behavior described in the rest of this file.
+
 ## Files for each job
 
 Every job gets its own folder: `<workspace>/resumes/tailored/<company>-<role>-<req or date>-<short random id>/`. Parallel runs never share a folder.
@@ -81,7 +96,7 @@ Framing
 6. Content check while you edit: `python3 scripts/resume_check.py --master <master> --resume <copy>`. It fails on: unconfirmed bullets, more than 3 bullets, likely 3-line bullets, numbers not in the master, an opening verb used 3+ times, a project first bullet without its identity phrase, a hackathon win without host school and count, not-real wording, AI-tool bullets, and a LaTeX project heading that is not `\projtitle{url}{name}`. Fix every failure. Read the warnings (NOMETRIC, SKILLDUP) and act on them when the master has the evidence.
 7. Build the PDF. LaTeX: `tectonic -X compile <copy>.tex`. Markdown: `python3 scripts/md_to_tex.py copy.md -o copy.tex`, then tectonic. While rewording for line fill, `python3 scripts/layout_check.py <copy>.pdf --bullets-only` is the quick loop.
 8. **Gate (mandatory before any upload or send):**
-   `python3 scripts/resume_gate.py --pdf <copy>.pdf --resume <copy>.tex --master <master>`
+   `python3 scripts/resume_gate.py --pdf <copy>.pdf --resume <copy>.tex --master <master>` (with `resume_mode: select_only`, add `--select-only --min-fill <resume_min_fill>`)
    It runs the content check and `layout_check.py` on the PDF, renders `full-110dpi.png`, `top-half-220dpi.png` and `bottom-half-220dpi.png` into `gate/`, and on a pass writes the receipt `<copy>.pdf.gate.json`. It must print `content violations: 0`, `violations: 0` and `VERDICT: PASS`. The layout check holds:
    - one page, filled to full height (bottom gap at most 43.3pt)
    - every bullet at most 2 rendered lines, every line (the last one too) at least 95% of the text width; no half-empty last lines

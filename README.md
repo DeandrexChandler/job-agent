@@ -29,6 +29,20 @@
 
 job-agent reads new postings from your JobRight feed, builds a one-page resume for each role from your master resume, drafts the written answers from your own facts, and fills the form on Greenhouse, Ashby, Lever, Workday and other employer portals. It works in the Chrome you already use, with the logins you already have. It never invents a fact.
 
+## This fork
+
+Deandre's fork of [azizu06/job-agent](https://github.com/azizu06/job-agent) adds three things:
+
+- **Simplify internship list** as a second job source next to JobRight (`sources.simplify`). It reads the public listings file from the SimplifyJobs GitHub repo, so nothing is scraped.
+- **Select-only resumes** (`resume_mode: select_only`, the default here). Tailoring only picks and orders bullets you wrote, including your alternates, and never rewords them. A checker fails any bullet that is not word for word yours.
+- **Recruiter outreach drafts** (`outreach`). After each run it finds the university recruiter and an alum or engineer at each company by web search and writes LinkedIn notes and follow-up DMs to `~/.job-agent/outreach/<date>.md`. You send them yourself; it never opens LinkedIn.
+
+Install this fork from its local folder instead of the upstream marketplace:
+
+```bash
+claude plugin marketplace add ~/code/projects/job-agent && claude plugin install job-agent@job-agent
+```
+
 ## Setup
 
 You need a Mac, [Claude Code](https://claude.com/claude-code), Google Chrome 144 or later, Node.js 20.19 or later and Python 3.9 or later. New to any of these? [Getting started](docs/getting-started.md) installs each one.

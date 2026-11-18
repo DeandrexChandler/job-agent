@@ -142,5 +142,41 @@ class Cli(unittest.TestCase):
         self.assertEqual(rc.main(["--master", master, "--resume", master]), 0)
 
 
+class SelectOnly(unittest.TestCase):
+    """resume_mode select_only: choose and order the user's own bullets, never reword them."""
+
+    def test_master_passes(self):
+        self.assertEqual(rc.run_checks(TEX_MASTER, TEX_MASTER, select_only=True), [])
+        self.assertEqual(rc.run_checks(MD_MASTER, MD_MASTER, select_only=True), [])
+
+    def test_swapping_in_an_alternate_passes(self):
+        resume = MASTER.replace("<!-- alt -->\n", "").replace("<!-- /alt -->\n", "")
+        resume = resume.replace("- Built a billing service that cut invoice errors by 40% across 3 regions\n", "")
+        self.assertEqual(rc.run_checks(MASTER, resume, select_only=True), [])
+
+    def test_tex_alternate_swap_passes(self):
+        alt = ("\\resumeItem{Containerized the billing service with \\textbf{Docker} and deployed it to "
+               "\\textbf{AWS ECS} behind an application load balancer.}")
+        swapped = TEX_MASTER.replace("\\resumeItem{Blocked \\textbf{30 failing deploys}", alt + "\n%", 1)
+        self.assertNotIn("VERBATIM", kinds(rc.run_checks(TEX_MASTER, swapped, select_only=True)))
+
+    def test_reworded_bullet_fails(self):
+        resume = MASTER.replace("cut invoice errors by 40%", "slashed invoice errors by 40% using Kafka")
+        self.assertIn("VERBATIM", kinds(rc.run_checks(MASTER, resume, select_only=True)))
+        self.assertNotIn("VERBATIM", kinds(rc.run_checks(MASTER, resume)))
+
+    def test_new_skill_term_fails(self):
+        resume = TEX_MASTER.replace("\\textbf{Languages}{: ", "\\textbf{Languages}{: Rust, ", 1)
+        self.assertIn("SKILLTERM", kinds(rc.run_checks(TEX_MASTER, resume, select_only=True)))
+
+    def test_style_rules_become_warnings(self):
+        master = one_project("Built a toy demo of a parser for 2,000 users")
+        warnings = []
+        problems = rc.run_checks(master, master, warnings=warnings, select_only=True)
+        self.assertNotIn("UNREAL", kinds(problems))
+        self.assertTrue(any("UNREAL" in w for w in warnings))
+        self.assertIn("UNREAL", kinds(rc.run_checks(master, master)))
+
+
 if __name__ == "__main__":
     unittest.main()

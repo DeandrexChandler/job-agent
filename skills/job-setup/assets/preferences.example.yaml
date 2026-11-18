@@ -68,6 +68,15 @@ caps:
 python_cmd: python3     # set by setup: python3 on macOS and Linux, py -3 on Windows
 master_resume: ~/.job-agent/resumes/master.md   # set by setup
 resume_format: markdown  # markdown | latex
+resume_mode: select_only # select_only: tailoring only picks and orders bullets you wrote (main and alternates), never rewords | rewrite: upstream tailoring that rewords toward each posting
+resume_min_fill: 0       # minimum line fill percent for the layout gate. 0 in select_only, so your own line lengths are not judged; upstream uses 95
+
+outreach:                # recruiter and alumni DM drafts. The agent never opens or acts on LinkedIn; you send every message
+  enabled: true
+  school: San Diego State University   # alumni search
+  per_day: 8             # most drafts written per day, best fits first
+  per_company: 2         # people per company: one recruiter, one engineer or alum
+  voice: casual, short, no buzzwords   # how the drafts should sound
 
 prior_check:             # before a posting passes: has the user applied to this req already?
   fail_closed: true      # a check that cannot run means not a pass this run
@@ -78,6 +87,10 @@ sources:
     enabled: true
     feed_url: ""         # paste the URL of your JobRight recommendations page sorted by Most Recent
     use_open_tab: false  # true: scan in a JobRight feed tab you keep open, instead of opening one. Never a second feed tab
+  simplify:
+    enabled: true        # the public Simplify / Pitt CSC internship list on GitHub, read after JobRight
+    listings_url: https://raw.githubusercontent.com/SimplifyJobs/Summer2027-Internships/dev/.github/scripts/listings.json
+    categories: [Software, Software Engineering, AI/ML/Data]   # also: Product, Quant, Hardware
   indeed:
     enabled: true        # fallback, used when the Indeed MCP connector is available
     queries:

@@ -35,6 +35,23 @@ The feed's own filters should be loose (job type, experience level, broad job fu
 
 JobRight location gotcha: "Anywhere in the US" in the location picker means remote only, which returns a small fraction of the feed. Nationwide is the country United States with no city chips. If the picker forces a city chip, tell the user (setup asks them to fix it once); never change the user's filters during a scan.
 
+## Simplify internship list (optional, on when `sources.simplify.enabled` is true)
+
+Simplify and Pitt CSC publish every tech internship they track in one public JSON file on GitHub. Reading it is a plain file download, with no browser and no sign-in. Run it after JobRight, into the same scan file:
+
+```
+python3 scripts/simplify_source.py scan --seen <workspace>/state/simplify-seen.json \
+  --url "<sources.simplify.listings_url>" --categories "<sources.simplify.categories, comma-joined>" \
+  --term "<term from preferences>" --merge-into <workspace>/state/scan-<YYYYMMDD-HHMM>.json
+```
+
+- Leave out `--url` to use the default (the Summer 2027 repo). Leave out `--term` when `term` is blank.
+- It keeps active listings in the chosen categories, drops every id it has seen before, and on the very first run keeps only listings added in the last 24 hours (the rest are marked seen, so they never flood a later run).
+- `--merge-into` skips a posting the scan file already holds from JobRight (same apply URL), so one job is never applied to twice in a run.
+- Items arrive with `source: simplify`, `first_seen` set to when Simplify added the listing, `term_text` from Simplify's terms, and `apply_url` pointing at the employer's own posting. `job-gate` reads the live posting and gates them like any other item.
+- If it prints `"ok": false`, the seen file is untouched; say so in the scan summary and carry on with the other sources.
+- Add the Simplify counts to the one-line summary: new listings and how many were added after dedupe.
+
 ## Extra sources (optional, pluggable)
 
 After JobRight, read each entry in `sources.extra` in order. Each one adds items to the same scan file with `source: <name>`, and every item is gated the same way. Built-in kinds:

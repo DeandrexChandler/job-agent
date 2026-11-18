@@ -20,6 +20,13 @@ Violations (each fails the check):
             Allowed: "software-in-the-loop simulation", "staged rollout/release/deploy"
   AITOOL    a bullet whose point is using AI coding tools (Claude Code, Codex, Copilot, Cursor)
   PROJTITLE a LaTeX project heading that is not \\projtitle{<url>}{<name>}
+  VERBATIM  (--select-only) a bullet that is not word for word one of the master's bullets,
+            printed or alternate. Select-only copies choose and order the user's own bullets
+  SKILLTERM (--select-only) a Skills term that is not in any of the master's Skills rows
+
+Select-only mode (--select-only, or resume_mode: select_only in preferences) also turns
+LENGTH, VERB, IDENTITY, HACKATHON, UNREAL and AITOOL into warnings: they are style rules a
+copy could only meet by rewording, and in this mode wording belongs to the user.
 
 Warnings (printed, never fail; fix them when the master has the evidence):
   NOMETRIC  a bullet with no number
@@ -62,6 +69,20 @@ AITOOL_RE = re.compile(r"Claude Code|\bCodex\b|Copilot|\bCursor\b|\bAI (?:coding
 def strip_alternates(text: str) -> str:
     text = re.sub(r"\\iffalse\b.*?\\fi\b", "", text, flags=re.DOTALL)
     return re.sub(r"<!--\s*alt\s*-->.*?<!--\s*/alt\s*-->", "", text, flags=re.DOTALL | re.IGNORECASE)
+
+
+def unwrap_alternates(text: str) -> str:
+    """The master with its alternate blocks opened, so alternates count as the user's own text."""
+    text = re.sub(r"\\iffalse\b|\\fi\b", "", text)
+    return re.sub(r"<!--\s*/?alt\s*-->", "", text, flags=re.IGNORECASE)
+
+
+def norm_bullet(s: str) -> str:
+    return re.sub(r"\s+", " ", s).strip().rstrip(".").strip()
+
+
+def skill_terms(rows: list[str]) -> set[str]:
+    return {t.strip().lower() for row in rows for t in re.split(r",\s*", row.split(":", 1)[-1]) if t.strip()}
 
 
 def is_latex(text: str) -> bool:
@@ -204,8 +225,33 @@ def check_bullet_wording(title: str, b: str) -> list[str]:
     return problems
 
 
+STYLE_CODES = ("LENGTH", "VERB", "IDENTITY", "HACKATHON", "UNREAL", "AITOOL")
+
+
 def run_checks(master: str, resume: str, max_bullets: int = 3, max_chars: int = 230,
-               max_verb_repeats: int = 2, warnings: list[str] | None = None) -> list[str]:
+               max_verb_repeats: int = 2, warnings: list[str] | None = None,
+               select_only: bool = False) -> list[str]:
+    problems = _run_checks(master, resume, max_bullets, max_chars, max_verb_repeats, warnings)
+    if not select_only:
+        return problems
+    style = [p for p in problems if p.split(" ", 1)[0] in STYLE_CODES]
+    problems = [p for p in problems if p not in style]
+    if warnings is not None:
+        warnings += ["(select-only) " + p for p in style]
+    pool = parse(unwrap_alternates(master))
+    own = {norm_bullet(b) for e in pool["entries"] for b in e["bullets"]}
+    for e in parse(resume)["entries"]:
+        for b in e["bullets"]:
+            if norm_bullet(b) not in own:
+                problems.append(f"VERBATIM {e['title']}: not one of your own bullets word for word: {b[:60]}...")
+    master_terms = skill_terms(pool["skills"])
+    for term in sorted(skill_terms(parse(resume)["skills"]) - master_terms):
+        problems.append(f"SKILLTERM {term!r} is not in any Skills row of the master")
+    return problems
+
+
+def _run_checks(master: str, resume: str, max_bullets: int = 3, max_chars: int = 230,
+                max_verb_repeats: int = 2, warnings: list[str] | None = None) -> list[str]:
     problems: list[str] = []
     for line in resume.splitlines():
         if "<!-- confirm -->" in line:
@@ -275,11 +321,14 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--max-bullets", type=int, default=3)
     ap.add_argument("--max-chars", type=int, default=230)
     ap.add_argument("--max-verb-repeats", type=int, default=2)
+    ap.add_argument("--select-only", action="store_true",
+                    help="bullets must be the master's own, word for word; style rules become warnings")
     args = ap.parse_args(argv)
     master = Path(args.master).read_text(encoding="utf-8")
     resume = Path(args.resume).read_text(encoding="utf-8")
     warnings: list[str] = []
-    problems = run_checks(master, resume, args.max_bullets, args.max_chars, args.max_verb_repeats, warnings)
+    problems = run_checks(master, resume, args.max_bullets, args.max_chars, args.max_verb_repeats, warnings,
+                          select_only=args.select_only)
     for line in summary(resume):
         print(line)
     for w in warnings:

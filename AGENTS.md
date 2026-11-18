@@ -18,13 +18,14 @@ Before step 1, check the prerequisites yourself: `node --version` (20.19 or late
 | Skill | Purpose |
 | --- | --- |
 | `skills/job-setup` | Interview the user, write preferences and standing answers, connect the browser |
-| `skills/job-scan` | Read new postings from JobRight (or Indeed MCP) up to the saved checkpoint |
+| `skills/job-scan` | Read new postings from JobRight and the Simplify internship list (or Indeed MCP) up to the saved checkpoint |
 | `skills/job-gate` | Filter by preferences, dedupe against the tracker, write the queue |
 | `skills/tailor-resume` | Build a truthful one-page copy from the master resume, with coverage before and after |
 | `skills/your-voice` | Every written answer: facts only, two drafts, built-in humanize pass, optional voice profile, self-audit, `writecheck.py` |
 | `skills/apply-fill` | Fill one application in its own tab and stop at Submit |
 | `skills/job-run` | Run the loop, one subagent per job, then re-verify and track |
 | `skills/tracker` | CSV, Notion or Sheets tracker plus Gmail receipts |
+| `skills/recruiter-outreach` | Find recruiters and alumni by web search and draft LinkedIn notes the user sends by hand |
 | `skills/status-sync` | Update statuses from assessment, interview, offer and rejection emails |
 | `skills/portal-auth` | Sign in to the user's job-portal accounts with SSO or a browser-saved login; optional credential mode for the rest |
 

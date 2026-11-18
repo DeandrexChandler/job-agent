@@ -92,6 +92,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--master", help="the master resume (numbers must trace to it)")
     ap.add_argument("--out", help="folder for the PNGs (default: <pdf folder>/gate)")
     ap.add_argument("--min-fill", type=int, default=95)
+    ap.add_argument("--select-only", action="store_true",
+                    help="resume_mode select_only: bullets must be the master's own, word for word")
     ap.add_argument("--verify", metavar="PDF", help="only check the receipt of an already gated PDF")
     args = ap.parse_args(argv)
 
@@ -111,7 +113,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"== content check: {resume}")
     warnings: list[str] = []
     problems = resume_check.run_checks(master.read_text(encoding="utf-8"), resume.read_text(encoding="utf-8"),
-                                       warnings=warnings)
+                                       warnings=warnings, select_only=args.select_only)
     for line in resume_check.summary(resume.read_text(encoding="utf-8")):
         print(line)
     for w in warnings:
