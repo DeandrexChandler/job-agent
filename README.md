@@ -34,7 +34,7 @@ job-agent reads new postings from your JobRight feed, builds a one-page resume f
 Deandre's fork of [azizu06/job-agent](https://github.com/azizu06/job-agent) adds three things:
 
 - **Simplify internship list** as a second job source next to JobRight (`sources.simplify`). It reads the public listings file from the SimplifyJobs GitHub repo, so nothing is scraped.
-- **Select-only resumes** (`resume_mode: select_only`, the default here). Tailoring only picks and orders bullets you wrote, including your alternates, and never rewords them. A checker fails any bullet that is not word for word yours.
+- **Resume modes.** `resume_mode: rewrite` (default) rewords your bullets toward each posting; `select_only` only picks and orders bullets you wrote and fails any reworded one. `skills_mode: stretch` (default) lets Skills rows list posting skills your master lacks and logs each to `~/.job-agent/interview-prep/skills-to-learn.md`; bullets never claim tools you have not used. Each job's before and after is in `~/.job-agent/reviews/`.
 - **Recruiter outreach drafts** (`outreach`). After each run it finds the university recruiter and an alum or engineer at each company by web search and writes LinkedIn notes and follow-up DMs to `~/.job-agent/outreach/<date>.md`. You send them yourself; it never opens LinkedIn.
 
 Install this fork from its local folder instead of the upstream marketplace:

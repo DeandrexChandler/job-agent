@@ -122,7 +122,7 @@ Progress file: `<workspace>/state/setup-progress.json`, like `{"done": ["chrome"
    - companies to skip, per-company caps with rolling windows, and how many roles per company at most (`caps.best_per_company`, default 2); max posting age in days and the employer-date check (`freshness`)
    - GenAI rules in postings (`genai_restriction`, default `flag`: fill and flag so they decide; `skip` cuts them)
    - forms per run (`browser.max_forms_per_run`, default 10), the Simplify internship list (`sources.simplify`, on by default for internships; ask which categories), and extra job sources they read (`sources.extra`, optional)
-   - resume mode (`resume_mode`): `select_only` (default here: the agent only picks and orders bullets the user wrote, never rewords them) or `rewrite` (upstream tailoring that rewords toward each posting)
+   - resume mode (`resume_mode`): `rewrite` (default: rewords bullets toward each posting, facts stay theirs) or `select_only` (only picks and orders bullets they wrote); and skills mode (`skills_mode`): `stretch` (default here: Skills rows may list posting skills not in the master, logged to `interview-prep/skills-to-learn.md`) or `truthful`
    - recruiter outreach drafts (`outreach.enabled`, default true): after each run, find recruiters and alumni for the jobs applied to and draft LinkedIn notes the user sends by hand; ask for their school and how many drafts per day
    - `python_cmd: python3` (write it yourself; Windows: `py -3`)
 

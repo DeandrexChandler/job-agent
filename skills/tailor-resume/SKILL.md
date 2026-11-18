@@ -17,7 +17,7 @@ Tools: `tectonic` builds the PDF. PyMuPDF (`python3 -m pip install pymupdf`) run
 
 ## Resume mode (read this first)
 
-`resume_mode` in `preferences.yaml` decides how much a copy may change. When it is `select_only` (the default in this fork), the rules in this section override everything below.
+`resume_mode` in `preferences.yaml` decides how much a copy may change. `rewrite` (the default) follows the rest of this file. When it is `select_only`, the rules in this section override everything below.
 
 **select_only: the user's words, the agent's choices.** A tailored copy is built only by choosing and ordering what the user already wrote in the master, printed page or alternates:
 - Allowed: re-rank projects and entries, pick which bullets show (at most 3 per entry), order bullets, swap in alternate bullets, entries, projects and Skills rows, drop the least relevant entry, reorder and trim Skills terms.
@@ -28,7 +28,20 @@ Tools: `tectonic` builds the PDF. PyMuPDF (`python3 -m pip install pymupdf`) run
 - If the gate still fails on layout (two pages, a hanging line, a gap at the bottom), fix it only by choosing differently: swap an alternate, drop or restore a bullet, swap a project, or use a shorter Skills row from the master. Try at most three such rebuilds. If none passes, use the general resume (the master's printed page, which already passed the gate) for this job and say so in the review file. Never reword to fix layout.
 - The review file still shows the before and after: in this mode it lists which bullets, alternates and projects were chosen and why, instead of rewritten text. The defense sheet is only needed for alternates swapped in.
 
-`resume_mode: rewrite` restores the upstream behavior described in the rest of this file.
+`resume_mode: rewrite` follows the rest of this file: reword, lengthen or shorten bullets and work posting keywords in so ATS keyword matching scores them, while every fact (what was built, employers, dates, numbers) stays the user's.
+
+## Skills mode
+
+`skills_mode` decides what the Skills rows may claim.
+
+- `truthful`: only terms the master supports (upstream behavior).
+- `stretch` (the default in this fork): Skills rows may list skills and tools from the posting that the master does not. The user chose this and plans to learn each one.
+  - Only in Skills rows. Bullets still never name a tool, metric, employer or experience the master lacks: a bullet is a story the user must tell in an interview, a Skills term is a keyword.
+  - Prefer posting terms close to what the master already shows (a framework next to its language, a cloud service next to one already listed) over ones far outside it. Required terms before preferred ones.
+  - Stretched terms count as covered in the coverage numbers. List them in the review file under "Stretched skills" so the user sees them in one place.
+  - After the gate passes, run `python3 scripts/stretch_skills.py --master <master> --resume <copy> --job "<Company> - <Role>" --log <workspace>/interview-prep/skills-to-learn.md`. It logs every stretched term with how many resumes it went out on; the user learns from the top of that list.
+  - In the defense sheet, give each stretched term one line: what it is in plain words and the fastest way to get hands-on with it before an interview.
+  - Do not ask the user about stretched terms. Ask only about terms you left off.
 
 ## Files for each job
 
@@ -50,7 +63,7 @@ Every job gets its own folder: `<workspace>/resumes/tailored/<company>-<role>-<r
 ## Content rules
 
 Truth
-- Never add a metric, tool, employer, title, date or experience that is not in the master. Rewording is fine; new facts are not. Every number must trace to the master (`resume_check.py` fails any that do not).
+- Never add a metric, tool, employer, title, date or experience that is not in the master. Rewording is fine; new facts are not. (With `skills_mode: stretch`, Skills rows are the one exception; see Skills mode.) Every number must trace to the master (`resume_check.py` fails any that do not).
 - Put a metric in every bullet where the master has real evidence for one. Write both ends of a change with units: "from 15 minutes to under 2", never "15 to 2".
 - Never use a master bullet that still ends in `<!-- confirm -->`; ask the user about it.
 - Never weaken or delete a claim the user approved in the master. Reword it only to add posting terms.
@@ -81,7 +94,7 @@ Framing
 
 ## Coverage
 
-- Count only terms the user can truthfully claim. Tools the user never used, and culture or values words ("ownership", "curiosity"), leave the denominator: list them in a terms file and pass `--exclude`.
+- Count only terms the user can truthfully claim (with `skills_mode: stretch`, skill and tool terms placed in Skills rows count too). Tools the user never used, and culture or values words ("ownership", "curiosity"), leave the denominator: list them in a terms file and pass `--exclude`.
 - Target: at least 95% of claimable terms, 100% whenever every claimable term fits.
 - Report general vs tailored: the master's printed page (`--before <master>`) against the copy, with the delta.
 - Never drop a missing term silently. Give each one a one-line plain meaning and ask the user about all of them in one batch. A confirmed term goes into the master the same turn (the matching Skills row, or the "Confirmed terms" section with where they used it), then rebuild. Never ask about the same term twice.

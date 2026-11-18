@@ -68,8 +68,9 @@ caps:
 python_cmd: python3     # set by setup: python3 on macOS and Linux, py -3 on Windows
 master_resume: ~/.job-agent/resumes/master.md   # set by setup
 resume_format: markdown  # markdown | latex
-resume_mode: select_only # select_only: tailoring only picks and orders bullets you wrote (main and alternates), never rewords | rewrite: upstream tailoring that rewords toward each posting
-resume_min_fill: 0       # minimum line fill percent for the layout gate. 0 in select_only, so your own line lengths are not judged; upstream uses 95
+resume_mode: rewrite      # rewrite: rewords your bullets toward each posting (wording, length, posting keywords); facts stay yours | select_only: only picks and orders bullets you wrote, never rewords
+resume_min_fill: 95      # minimum line fill percent for the layout gate. 95 in rewrite mode; 0 suits select_only
+skills_mode: stretch     # stretch: Skills rows may list posting skills your master does not; each one is logged to interview-prep/skills-to-learn.md | truthful: only skills in your master
 
 outreach:                # recruiter and alumni DM drafts. The agent never opens or acts on LinkedIn; you send every message
   enabled: true
