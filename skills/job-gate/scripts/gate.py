@@ -234,10 +234,15 @@ def gate_one(job: dict, prefs: dict, now: dt.datetime) -> dict:
     seen_hours = float(fresh.get("first_seen_hours") or (float(prefs.get("max_posting_age_days") or 3) * 24))
     employer_days = fresh.get("employer_max_days")
     seen = _time(job.get("first_seen")) or jobright_meta.first_seen(str(job.get("id") or ""))
-    if job.get("source") not in exempt and seen is not None and now - seen > dt.timedelta(hours=seen_hours):
+    backlog = bool(job.get("backlog"))  # Simplify backlog: old by design, still open; skip both freshness checks
+    if backlog:
+        entry["backlog"] = True
+        flags.append("backlog")
+    if not backlog and job.get("source") not in exempt and seen is not None and now - seen > dt.timedelta(hours=seen_hours):
         return out("cut", "repost", f"REPOST: first seen {fmt_time(seen)}, over {seen_hours:g}h ago")
     published = _time(job.get("employer_published"))
-    if published is not None and employer_days not in (None, "") and now - published > dt.timedelta(days=float(employer_days)):
+    if not backlog and published is not None and employer_days not in (None, "") and \
+            now - published > dt.timedelta(days=float(employer_days)):
         src = job.get("employer_date_source") or "employer posting"
         return out("cut", "repost", f"REPOST: {src} published {fmt_time(published)}, over {float(employer_days):g} days ago")
     entry["first_seen"] = seen.isoformat() if seen else ""

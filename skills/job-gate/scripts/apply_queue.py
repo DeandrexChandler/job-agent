@@ -137,7 +137,11 @@ def remove(queue: dict, ident: dict, receipt: str, now: dt.datetime | None = Non
 
 
 def next_batch(queue: dict, limit: int) -> list[dict]:
-    return [e for e in queue["entries"] if e.get("state") == QUEUED][:max(limit, 0)]
+    """Queued entries in order, fresh postings before backlog ones (best fit first among the backlog)."""
+    queued = [e for e in queue["entries"] if e.get("state") == QUEUED]
+    fresh = [e for e in queued if not e.get("backlog")]
+    backlog = sorted((e for e in queued if e.get("backlog")), key=lambda e: -float(e.get("fit") or 0))
+    return (fresh + backlog)[:max(limit, 0)]
 
 
 def main(argv: list[str] | None = None) -> int:

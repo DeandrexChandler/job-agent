@@ -169,6 +169,12 @@ class SelectOnly(unittest.TestCase):
         resume = TEX_MASTER.replace("\\textbf{Languages}{: ", "\\textbf{Languages}{: Rust, ", 1)
         self.assertIn("SKILLTERM", kinds(rc.run_checks(TEX_MASTER, resume, select_only=True)))
 
+    def test_latex_escaped_tilde_is_still_word_for_word(self):
+        master = one_project("Built an app (~5,000 lines of Swift) with data stored on-device")
+        tex = rc.tex_plain(r"Built an app (\textasciitilde{}5,000 lines of Swift) with data stored on-device")
+        self.assertEqual(rc.norm_bullet(tex), rc.norm_bullet("Built an app (~5,000 lines of Swift) with data stored on-device"))
+        self.assertEqual(rc.norm_bullet("team\u2019s app \u2014 v2"), rc.norm_bullet("team's app - v2"))
+
     def test_style_rules_become_warnings(self):
         master = one_project("Built a toy demo of a parser for 2,000 users")
         warnings = []

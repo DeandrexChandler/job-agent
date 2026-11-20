@@ -85,5 +85,31 @@ class Cli(unittest.TestCase):
             self.assertFalse(seen.exists())
 
 
+class Backlog(unittest.TestCase):
+    def test_window_priority_and_flag(self):
+        rows = [row("old", 24 * 25), row("mid", 24 * 5, company_name="Acme"),
+                row("sony", 24 * 10, company_name="Sony Interactive Entertainment"), row("new", 2)]
+        items = ss.build_backlog(rows, NOW, 20, ss.DEFAULT_CATEGORIES, "Summer 2027", ["Sony"])
+        self.assertEqual([i["id"] for i in items], ["sony", "new", "mid"])
+        self.assertTrue(all(i["backlog"] for i in items))
+
+    def test_drains_a_little_each_scan(self):
+        with tempfile.TemporaryDirectory() as d:
+            listings = Path(d) / "listings.json"
+            listings.write_text(json.dumps([row(f"b{n}", 24 * (n + 2)) for n in range(5)] + [row("fresh", 1)]))
+            back, seen, scan = Path(d) / "backlog.json", Path(d) / "seen.json", Path(d) / "scan.json"
+            base = ["--file", str(listings), "--now", NOW.isoformat()]
+            self.assertEqual(ss.main(["backlog", "--backlog", str(back), "--days", "20", *base]), 0)
+            self.assertEqual(len(ss.load_backlog(back)), 6)
+            args = ["scan", "--seen", str(seen), *base, "--merge-into", str(scan), "--backlog", str(back), "--backlog-take", "2"]
+            self.assertEqual(ss.main(args), 0)
+            ids = [i["id"] for i in json.loads(scan.read_text())["items"]]
+            self.assertEqual(ids[0], "fresh")          # the regular scan found it; the backlog copy is skipped
+            self.assertEqual(len(ids), 3)              # fresh + 2 from the backlog
+            self.assertEqual(len(ss.load_backlog(back)), 3)
+            self.assertEqual(ss.main(args), 0)
+            self.assertEqual(len(ss.load_backlog(back)), 1)
+
+
 if __name__ == "__main__":
     unittest.main()

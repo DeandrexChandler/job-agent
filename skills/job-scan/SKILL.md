@@ -50,7 +50,17 @@ python3 scripts/simplify_source.py scan --seen <workspace>/state/simplify-seen.j
 - `--merge-into` skips a posting the scan file already holds from JobRight (same apply URL), so one job is never applied to twice in a run.
 - Items arrive with `source: simplify`, `first_seen` set to when Simplify added the listing, `term_text` from Simplify's terms, and `apply_url` pointing at the employer's own posting. `job-gate` reads the live posting and gates them like any other item.
 - If it prints `"ok": false`, the seen file is untouched; say so in the scan summary and carry on with the other sources.
-- Add the Simplify counts to the one-line summary: new listings and how many were added after dedupe.
+- Add the Simplify counts to the one-line summary: new listings, backlog items taken, backlog left, and how many were added after dedupe.
+
+**Backlog (postings that opened before job-agent started watching).** The scan above only sees listings that are new since the last run, so roles that opened weeks ago and are still open never come up. To load them once:
+
+```
+python3 scripts/simplify_source.py backlog --backlog <workspace>/state/simplify-backlog.json \
+  --days <sources.simplify.backlog_days or 20> --categories "<...>" --term "<term>" \
+  --first-companies "<every company in prestige.tiers, comma-joined>"
+```
+
+Run it when the user asks for the backlog or runs `/job-agent:run backlog`. Report the count and how many runs it will take at `backlog_per_run` a run. Rebuilding replaces the file. After that, every scan (including the one in the same run) drains it: add `--backlog <workspace>/state/simplify-backlog.json --backlog-take <sources.simplify.backlog_per_run or 20>` to the scan command whenever that file exists. Backlog items carry `"backlog": true`; job-gate skips its freshness checks for them (every other rule still applies), and the queue fills fresh postings before backlog ones, so a backlog never pushes a brand-new posting back.
 
 ## Extra sources (optional, pluggable)
 

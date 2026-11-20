@@ -69,7 +69,8 @@ python_cmd: python3     # set by setup: python3 on macOS and Linux, py -3 on Win
 master_resume: ~/.job-agent/resumes/master.md   # set by setup
 resume_format: markdown  # markdown | latex
 resume_mode: rewrite      # rewrite: rewords your bullets toward each posting (wording, length, posting keywords); facts stay yours | select_only: only picks and orders bullets you wrote, never rewords
-resume_min_fill: 95      # minimum line fill percent for the layout gate. 95 in rewrite mode; 0 suits select_only
+resume_min_fill: 95      # line fill percent the gate wants on tailored copies (95 in rewrite mode, 0 in select_only)
+general_min_fill: 0      # line fill percent for your general resume, which is never reworded. 0: not judged
 skills_mode: stretch     # stretch: Skills rows may list posting skills your master does not; each one is logged to interview-prep/skills-to-learn.md | truthful: only skills in your master
 
 outreach:                # recruiter and alumni DM drafts. The agent never opens or acts on LinkedIn; you send every message
@@ -92,6 +93,8 @@ sources:
     enabled: true        # the public Simplify / Pitt CSC internship list on GitHub, read after JobRight
     listings_url: https://raw.githubusercontent.com/SimplifyJobs/Summer2027-Internships/dev/.github/scripts/listings.json
     categories: [Software, Software Engineering, AI/ML/Data]   # also: Product, Quant, Hardware
+    backlog_days: 20     # /job-agent:run backlog loads still-open listings Simplify added in the last N days
+    backlog_per_run: 20  # backlog listings moved into each run's scan until the backlog is empty
   indeed:
     enabled: true        # fallback, used when the Indeed MCP connector is available
     queries:

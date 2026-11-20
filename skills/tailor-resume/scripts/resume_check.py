@@ -78,6 +78,9 @@ def unwrap_alternates(text: str) -> str:
 
 
 def norm_bullet(s: str) -> str:
+    """Compare bullets as a reader sees them: same words, ignoring quote styles, dash length and spacing."""
+    s = s.replace("\u2019", "'").replace("\u2018", "'").replace("\u201c", '"').replace("\u201d", '"')
+    s = s.replace("\u2014", "-").replace("\u2013", "-").replace("--", "-")
     return re.sub(r"\s+", " ", s).strip().rstrip(".").strip()
 
 
@@ -95,6 +98,9 @@ def tex_plain(s: str) -> str:
     s = re.sub(r"\\href\{[^}]*\}\{", "{", s)
     s = re.sub(r"\\([%&#_$])", r"\1", s)
     s = s.replace("~", " ").replace("$|$", "|").replace("--", "-")
+    # Escaped symbols the reader sees as themselves (md_to_tex writes ~ and ^ this way).
+    s = re.sub(r"\\textasciitilde(\{\}|\b)", "~", s)
+    s = re.sub(r"\\textasciicircum(\{\}|\b)", "^", s)
     s = re.sub(r"\\[a-zA-Z]+\*?", "", s)
     s = re.sub(r"[{}$]", "", s)
     return re.sub(r"\s+", " ", s).strip()

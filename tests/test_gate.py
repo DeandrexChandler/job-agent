@@ -86,6 +86,19 @@ class Freshness(unittest.TestCase):
         self.assertEqual(gate.gate_one(old, p, NOW)["decision"], "pass")
 
 
+    def test_backlog_skips_both_freshness_checks_and_fills_last(self):
+        old = job(id=oid(NOW - dt.timedelta(days=15)), employer_published="2026-10-01T12:00:00Z", backlog=True)
+        r = gate.gate_one(old, prefs(), NOW)
+        self.assertEqual(r["decision"], "pass")
+        self.assertTrue(r["entry"]["backlog"])
+        self.assertIn("backlog", r["entry"].get("flags", []))
+        self.assertEqual(gate.gate_one(dict(old, backlog=False), prefs(), NOW)["decision"], "cut")
+        q = {"entries": [{"company": "B", "title": "x", "state": apply_queue.QUEUED, "backlog": True, "fit": 2},
+                         {"company": "C", "title": "y", "state": apply_queue.QUEUED, "backlog": True, "fit": 9},
+                         {"company": "F", "title": "z", "state": apply_queue.QUEUED}], "removed": []}
+        self.assertEqual([e["company"] for e in apply_queue.next_batch(q, 2)], ["F", "C"])
+
+
 class RoleFit(unittest.TestCase):
     def test_title_decides(self):
         p = prefs()
