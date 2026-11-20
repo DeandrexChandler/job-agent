@@ -46,6 +46,15 @@ class NextData(unittest.TestCase):
         got = jm.next_data('<script id="__NEXT_DATA__" type="application/json">' + json.dumps(data) + "</script>")
         self.assertEqual((got["match_score"], got["match_label"]), (95.6, "Strong Match"))
 
+    def test_bare_json_block(self):
+        # What evaluate_script returns when it reads the script tag's text: the JSON, no <script> wrapper.
+        data = {"props": {"pageProps": {"dataSource": {"displayScore": 77.76, "rankDesc": "Good Match",
+                                                       "jobResult": {"publishTime": "2026-11-20 17:47:43",
+                                                                     "originalUrl": "https://x.example/jobs/1"}}}}}
+        got = jm.next_data("\n" + json.dumps(data))
+        self.assertEqual((got["publish_time"], got["original_url"], got["match_score"]),
+                         ("2026-11-20 17:47:43", "https://x.example/jobs/1", 77.8))
+
 
 class Window(unittest.TestCase):
     def test_fresh_checkpoint_stops_at_its_id(self):
