@@ -37,7 +37,14 @@ class NextData(unittest.TestCase):
         html += "</script>"
         got = jm.next_data(html)
         self.assertEqual(got["original_url"], "https://x.example/j?a=1&b=2")
-        self.assertEqual(jm.next_data("<html></html>"), {"publish_time": "", "original_url": ""})
+        self.assertEqual(jm.next_data("<html></html>"),
+                         {"publish_time": "", "original_url": "", "match_score": None, "match_label": ""})
+
+    def test_match_score(self):
+        data = {"props": {"pageProps": {"dataSource": {"displayScore": 95.5758, "rankDesc": "Strong Match",
+                                                       "jobResult": {"publishTime": "2026-11-20 02:47:00"}}}}}
+        got = jm.next_data('<script id="__NEXT_DATA__" type="application/json">' + json.dumps(data) + "</script>")
+        self.assertEqual((got["match_score"], got["match_label"]), (95.6, "Strong Match"))
 
 
 class Window(unittest.TestCase):

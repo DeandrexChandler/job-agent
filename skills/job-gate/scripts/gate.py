@@ -25,7 +25,8 @@ Rules, in order (preferences keys in brackets):
      exclude_title_words, role_fit]
   2. linkedin-only apply link is cut
   3. term: a stated term must match [term]; no stated term follows [term_missing]
-  4. freshness: first seen within [freshness.first_seen_hours] (default
+  4. freshness (skipped for backlog items, and for every item while freshness.reposts is keep, this fork's
+     default; reposts are then only flagged): first seen within [freshness.first_seen_hours] (default
      max_posting_age_days x 24) AND the employer's own publish date within
      [freshness.employer_max_days]. Either too old = REPOST
   5. location and work mode [locations, remote_ok, work_mode.remote_requires_prestige]
@@ -238,16 +239,31 @@ def gate_one(job: dict, prefs: dict, now: dt.datetime) -> dict:
     if backlog:
         entry["backlog"] = True
         flags.append("backlog")
-    if not backlog and job.get("source") not in exempt and seen is not None and now - seen > dt.timedelta(hours=seen_hours):
+    # freshness.reposts: keep (this fork's default) treats a reposted or long-open posting as fine to apply to:
+    # internship postings stay open for months, and the tracker and Gmail checks already stop a second application.
+    keep_reposts = str(fresh.get("reposts") or "keep").lower() != "cut"
+    is_repost = seen is not None and now - seen > dt.timedelta(hours=seen_hours)
+    if is_repost and keep_reposts and not backlog:
+        flags.append(f"repost (first seen {fmt_time(seen)})")
+    skip_fresh = backlog or keep_reposts
+    if not skip_fresh and job.get("source") not in exempt and is_repost:
         return out("cut", "repost", f"REPOST: first seen {fmt_time(seen)}, over {seen_hours:g}h ago")
     published = _time(job.get("employer_published"))
-    if not backlog and published is not None and employer_days not in (None, "") and \
+    if not skip_fresh and published is not None and employer_days not in (None, "") and \
             now - published > dt.timedelta(days=float(employer_days)):
         src = job.get("employer_date_source") or "employer posting"
         return out("cut", "repost", f"REPOST: {src} published {fmt_time(published)}, over {float(employer_days):g} days ago")
     entry["first_seen"] = seen.isoformat() if seen else ""
     if published:
         entry["employer_published"] = published.isoformat()
+
+    # JobRight's match percent: kept for ordering; cut only below sources.jobright.min_match when set
+    match = job.get("match_score")
+    if isinstance(match, (int, float)):
+        entry["match_score"] = float(match)
+        floor = ((prefs.get("sources") or {}).get("jobright") or {}).get("min_match")
+        if floor not in (None, "", 0) and float(match) < float(floor):
+            return out("near", "match", f"JobRight match {match:g}% is under min_match {float(floor):g}%")
 
     # 5. location and work mode
     mode = (job.get("work_mode") or "").lower()

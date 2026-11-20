@@ -29,6 +29,7 @@ def oid(when: dt.datetime) -> str:
 def prefs(**over):
     p = prefs_yaml.load(REPO / "skills" / "job-setup" / "assets" / "preferences.example.yaml")
     p["freshness"]["first_seen_hours"] = 24
+    p["freshness"]["reposts"] = "cut"  # the freshness tests check the cut path; Reposts below checks keep
     for k, v in over.items():
         p[k] = v
     return p
@@ -97,6 +98,28 @@ class Freshness(unittest.TestCase):
                          {"company": "C", "title": "y", "state": apply_queue.QUEUED, "backlog": True, "fit": 9},
                          {"company": "F", "title": "z", "state": apply_queue.QUEUED}], "removed": []}
         self.assertEqual([e["company"] for e in apply_queue.next_batch(q, 2)], ["F", "C"])
+
+
+class Reposts(unittest.TestCase):
+    def test_keep_lets_old_postings_through_flagged_and_match_orders(self):
+        p = prefs()
+        p["freshness"]["reposts"] = "keep"
+        old = job(id=oid(NOW - dt.timedelta(days=60)), employer_published="2026-09-01T12:00:00Z", match_score=95.6)
+        r = gate.gate_one(old, p, NOW)
+        self.assertEqual(r["decision"], "pass")
+        self.assertTrue(any(f.startswith("repost") for f in r["entry"]["flags"]))
+        self.assertEqual(r["entry"]["match_score"], 95.6)
+        q = {"entries": [{"company": "Low", "title": "x", "state": apply_queue.QUEUED, "match_score": 60},
+                         {"company": "None", "title": "y", "state": apply_queue.QUEUED},
+                         {"company": "High", "title": "z", "state": apply_queue.QUEUED, "match_score": 95}], "removed": []}
+        self.assertEqual([e["company"] for e in apply_queue.next_batch(q, 3)], ["High", "Low", "None"])
+
+    def test_min_match_is_a_near_miss(self):
+        p = prefs()
+        p["sources"]["jobright"]["min_match"] = 70
+        self.assertEqual(gate.gate_one(job(match_score=65.0), p, NOW)["decision"], "near")
+        self.assertEqual(gate.gate_one(job(match_score=75.0), p, NOW)["decision"], "pass")
+        self.assertEqual(gate.gate_one(job(), p, NOW)["decision"], "pass")  # Simplify items have no match score
 
 
 class RoleFit(unittest.TestCase):

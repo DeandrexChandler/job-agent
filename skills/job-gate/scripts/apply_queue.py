@@ -139,7 +139,9 @@ def remove(queue: dict, ident: dict, receipt: str, now: dt.datetime | None = Non
 def next_batch(queue: dict, limit: int) -> list[dict]:
     """Queued entries in order, fresh postings before backlog ones (best fit first among the backlog)."""
     queued = [e for e in queue["entries"] if e.get("state") == QUEUED]
-    fresh = [e for e in queued if not e.get("backlog")]
+    # Fresh postings: best fit first, JobRight's match percent breaks ties, otherwise queue order.
+    fresh = sorted((e for e in queued if not e.get("backlog")),
+                   key=lambda e: (-float(e.get("fit") or 0), -float(e.get("match_score") or 0)))
     backlog = sorted((e for e in queued if e.get("backlog")), key=lambda e: -float(e.get("fit") or 0))
     return (fresh + backlog)[:max(limit, 0)]
 

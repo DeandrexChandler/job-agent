@@ -78,6 +78,7 @@ def setup(ws: Path, port: int) -> None:
         ("  receipts: gmail        # gmail | none | mock", "  receipts: mock         # gmail | none | mock"),
         ('  mock_inbox: ""  ', f'  mock_inbox: "{p["inbox"]}"  '),
         ("auto_submit: false ", "auto_submit: true  "),
+        ("  reposts: keep   ", "  reposts: cut    "),  # the rig checks the repost cut path
         ("    enabled: true        # fallback, used when the Indeed MCP", "    enabled: false       # fallback, used when the Indeed MCP"),
         ("    # Example Corp: { max: 2, window_days: 180 }", "    Stark Industries: { max: 1, window_days: 30 }"),
     ]:

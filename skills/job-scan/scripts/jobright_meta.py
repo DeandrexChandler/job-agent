@@ -2,7 +2,7 @@
 """JobRight helpers for job-scan: first-seen time, posting metadata, checkpoint.
 
   jobright_meta.py first-seen <job id>...         first-seen time from the id
-  jobright_meta.py next-data <file.html>           publishTime and originalUrl from __NEXT_DATA__
+  jobright_meta.py next-data <file.html>           publishTime, originalUrl and the match score from __NEXT_DATA__
   jobright_meta.py window --checkpoint <file>      where this scan should stop, and why
   jobright_meta.py save --checkpoint <file> --id <top card id> [--publish-time T] [--title T] [--company C]
 
@@ -79,7 +79,7 @@ def next_data(html: str) -> dict:
 
     Falls back to a plain regex when the block is not valid JSON.
     """
-    out = {"publish_time": "", "original_url": ""}
+    out = {"publish_time": "", "original_url": "", "match_score": None, "match_label": ""}
     m = _NEXT.search(html or "")
     if not m:
         return out
@@ -88,11 +88,20 @@ def next_data(html: str) -> dict:
         data = json.loads(raw)
         out["publish_time"] = str(_find_key(data, "publishTime") or "")
         out["original_url"] = str(_find_key(data, "originalUrl") or "")
+        # JobRight's match percent for this job: pageProps.dataSource.displayScore ("Fair Match" etc. in rankDesc).
+        src = (((data.get("props") or {}).get("pageProps") or {}).get("dataSource") or {}) if isinstance(data, dict) else {}
+        score = src.get("displayScore") if isinstance(src, dict) else None
+        if isinstance(score, (int, float)):
+            out["match_score"] = round(float(score), 1)
+            out["match_label"] = str(src.get("rankDesc") or "")
     except ValueError:
         for key, field in (("publishTime", "publish_time"), ("originalUrl", "original_url")):
             g = re.search(r'"%s"\s*:\s*"([^"]*)"' % key, raw)
             if g:
                 out[field] = g.group(1)
+        g = re.search(r'"displayScore"\s*:\s*([0-9.]+)', raw)
+        if g:
+            out["match_score"] = round(float(g.group(1)), 1)
     out["original_url"] = out["original_url"].replace("\\u0026", "&").replace("\\/", "/")
     return out
 

@@ -54,7 +54,8 @@ companies_to_skip:
   - Example Corp
 
 max_posting_age_days: 3  # measured from the date the agent first saw the posting
-freshness:               # two checks; failing either cuts the posting as REPOST
+freshness:               # two checks; failing either cuts the posting as REPOST (only when reposts: cut)
+  reposts: keep          # keep: reposted or long-open postings still go through (flagged); internships stay open for months | cut: upstream behavior
   # first_seen_hours: 24 # overrides max_posting_age_days. JobRight ids carry their first-seen time
   employer_max_days: 2   # the employer's own publish date (Ashby publishedAt, Greenhouse first_published, Workday postedOn)
   exempt_sources: []     # extra sources whose drops are days old by design, for example a newsletter
@@ -89,6 +90,8 @@ sources:
     enabled: true
     feed_url: ""         # paste the URL of your JobRight recommendations page sorted by Most Recent
     use_open_tab: false  # true: scan in a JobRight feed tab you keep open, instead of opening one. Never a second feed tab
+    force_most_recent: true  # each scan switches its own tab's feed to Most Recent when JobRight shows another sort (changes the sort on your JobRight account)
+    min_match: 0         # skip postings under this JobRight match percent (0: never skip; match is used for ordering either way)
   simplify:
     enabled: true        # the public Simplify / Pitt CSC internship list on GitHub, read after JobRight
     listings_url: https://raw.githubusercontent.com/SimplifyJobs/Summer2027-Internships/dev/.github/scripts/listings.json
