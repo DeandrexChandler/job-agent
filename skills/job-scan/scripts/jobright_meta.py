@@ -81,9 +81,10 @@ def next_data(html: str) -> dict:
     """
     out = {"publish_time": "", "original_url": ""}
     m = _NEXT.search(html or "")
-    if not m:
+    # Agents usually save just the block's text (the JSON itself), not the page around it.
+    raw = m.group(1) if m else (html or "").strip()
+    if not raw.startswith("{"):
         return out
-    raw = m.group(1)
     try:
         data = json.loads(raw)
         out["publish_time"] = str(_find_key(data, "publishTime") or "")
