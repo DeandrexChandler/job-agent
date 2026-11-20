@@ -26,9 +26,13 @@ The agent finds people and writes drafts. The user sends every message. Never op
    - alum: `site:linkedin.com/in "<Company>" "<school>" software engineer`
    - engineer on the team, when the posting names one: `site:linkedin.com/in "<Company>" "<team or product from the posting>" engineer`
    Prefer a university or early-career recruiter over a general one, and an alum over a random engineer. From each result use only what the result title and snippet show: name, current title and company, and the profile URL. Skip anyone whose snippet does not show them at that company now, anyone senior to the point a cold note is odd (VP and up), and anyone already in the log (step 4 refuses them anyway). If nothing fits after about four queries, note the company as "nobody found" and move on. Never guess a name or URL.
-3. **Draft** for each person, from facts in the master resume only:
-   - **Connection note**, at most 200 characters (free LinkedIn accounts cap notes and may limit how many notes a month; the user can send without one). Names the role they applied to and one real, specific thing about them that fits the posting.
-   - **Follow-up DM** for after they accept, 2 to 4 short sentences: who they are, the role and req ID if known, one relevant project or result in plain words, and a small ask (a 15-minute chat for an alum or engineer; for a recruiter, whether the application can get a look, or what the team looks for).
+3. **Draft** for each person, from facts in the master resume and the search snippet only. Engineers and alums get questions, not asks: people answer someone curious about their work and ignore someone who wants a referral. So their drafts never mention the application, the role, a req ID, a referral or "a good word". The user brings that up themselves after a real chat.
+   - **Connection note**, at most 200 characters (free LinkedIn accounts cap notes and may limit how many notes a month; the user can send without one).
+     - Engineer or alum: open with one specific thing they did, taken from the snippet (a team, product, past role or move). Add the shared school only when the snippet shows it. Then one line on who the user is (a CS student at their school) and a plain "wondering if we could connect?". Example: "Hi Sam, I saw you went from Uber's self-driving team to building delivery robots at DoorDash! I'm a CS student at SDSU and was wondering if we could connect?"
+     - Recruiter: name the role the user applied to and one real thing about the user that fits the posting.
+   - **Follow-up DM** for after they accept, 2 to 4 short sentences.
+     - Engineer or alum: tie their work to the user's interest in one line. Then ask one real question, for example what they would do if they were starting from square one again. End with a low-pressure ask: "if you have 5 minutes sometime, I'd love to hear what it's like working at <something personal from the snippet: their city, team, a career switch>". Keep it 5 minutes even though a chat runs longer, because a small ask gets a yes.
+     - Recruiter: who the user is, the role and req ID, one relevant project in plain words, and whether the application can get a look or what the team looks for.
    - Voice: follow `outreach.voice` and the user's `voice/` profile when it exists. Sound like a student texting a professional they respect: plain words, contractions, no "I hope this finds you well", "passionate", "leverage", "excited to connect", "synergy", no emojis unless the user's voice uses them, no flattery about the person's career. Save each draft to a temp file and run `python3 ../your-voice/scripts/writecheck.py check <file> --max-chars 200` for notes (no `--max-chars` for DMs); fix what it flags and run it again.
    - One draft per person; never the same note to two people word for word.
 4. **Record** each person: `python3 scripts/outreach_log.py record --log ... --company "<C>" --name "<N>" --url "<profile URL>" --role "<their title>" --kind recruiter|alum|engineer --job "<title applied to>"`. If it refuses, drop that draft.
@@ -42,6 +46,6 @@ When the user says they sent, got a reply, or want to skip someone: `python3 scr
 ## Never
 
 - Open, fetch, scroll, sign in to or act on linkedin.com, or use any LinkedIn API, export, or extension.
-- Invent a fact about the user or the person, or claim a connection that does not exist ("we met at...").
+- Invent a fact about the user or the person, or claim a connection that does not exist ("we met at...", a shared school the snippet does not show).
 - Draft to someone the log already holds, or more than `per_day` people in a day.
 - Look up personal email addresses or phone numbers.
