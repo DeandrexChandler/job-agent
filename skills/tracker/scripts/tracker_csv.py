@@ -10,7 +10,7 @@ Examples:
   python3 tracker_csv.py --file tracker.csv find --company Acme --req-id R123
   python3 tracker_csv.py --file tracker.csv update --company Acme --req-id R123 \
       --status Interview
-  python3 tracker_csv.py --file tracker.csv count --status Submitted --date today
+  python3 tracker_csv.py --file tracker.csv count --status Applied --date today
   python3 tracker_csv.py --file tracker.csv count --company Acme --since 2026-01-01
   python3 tracker_csv.py --file tracker.csv record-submit --company Acme --role "SWE Intern" \
       --req-id R123 --link <url> --resume-used /abs/path/uploaded.pdf \
@@ -36,12 +36,17 @@ from pathlib import Path
 COLUMNS = ["company", "role", "req_id", "link", "date", "resume_used", "status", "receipt_id", "notes",
            "applied_at", "pay", "location"]
 # Ready means filled and waiting for the human to press Submit.
-# "Needs you: <reason>" means the applier parked the tab for the human.
+# Needs you means the applier parked the tab for the human; the reason leads the notes
+# ("needs you: captcha"). "Needs you: <reason>" is still accepted and split that way.
+# Applied means the application was sent (older trackers said Submitted, still accepted).
+# Accepted is an offer the user took (the user sets it).
 # Discovered is an optional row for a posting you want tracked before it is filled.
 # Ghosted is a sent application with no reply after a long wait (the user sets it).
 # With tracker.rows_for_unsubmitted: false, only sent applications get rows;
 # Ready and parked jobs live in the apply queue instead.
-STATUSES = ["Discovered", "Ready", "Submitted", "Assessment", "Interview", "Offer", "Rejected", "Ghosted", "Withdrawn"]
+STATUSES = ["Discovered", "Ready", "Needs you", "Applied", "Assessment", "Interview", "Offer", "Accepted",
+            "Rejected", "Ghosted", "Withdrawn"]
+ALIASES = {"submitted": "Applied"}  # old names still accepted on input and matched in counts
 
 _SUFFIXES = re.compile(r"\b(inc|llc|ltd|corp|corporation|co|company|plc|gmbh)\b\.?", re.IGNORECASE)
 
@@ -99,8 +104,7 @@ def add(rows: list[dict], new: dict) -> tuple[dict, bool]:
         return existing, False
     row = {col: new.get(col, "") or "" for col in COLUMNS}
     row["date"] = row["date"] or dt.date.today().isoformat()
-    row["status"] = row["status"] or "Ready"
-    _check_status(row["status"])
+    _apply_status(row, row["status"] or "Ready")
     rows.append(row)
     return row, True
 
@@ -113,8 +117,10 @@ def update(rows: list[dict], company: str, req_id: str, role: str, changes: dict
         if value is None:
             continue
         if col == "status":
-            _check_status(value)
+            continue
         row[col] = value
+    if changes.get("status"):
+        _apply_status(row, changes["status"])
     return row
 
 
@@ -126,9 +132,14 @@ def count(
     since: str | None = None,
 ) -> int:
     """Count rows. `date` matches one day; `since` keeps rows on or after a day."""
+    want = normalize_status(status)[0] if status else None
     n = 0
     for row in rows:
-        if status and row["status"] != status:
+        try:
+            have = normalize_status(row["status"])[0]
+        except ValueError:
+            have = row["status"]
+        if want and have != want:
             continue
         if date and row["date"] != date:
             continue
@@ -154,7 +165,7 @@ def check_resume(path: str) -> str:
 
 READ_BACK = "read-back: "
 # Statuses that mean the application was sent; such rows need proof.
-SENT = {"Submitted", "Assessment", "Interview", "Offer", "Rejected", "Ghosted"}
+SENT = {"Applied", "Submitted", "Assessment", "Interview", "Offer", "Accepted", "Rejected", "Ghosted"}
 NOT_FILLED = "receipt for a role the loop did not fill"
 
 
@@ -180,11 +191,11 @@ def record_submit(rows: list[dict], ident: dict, resume_used: str, read_back: st
         msg = mock_inbox.find_receipt(mock_inbox.load(Path(inbox).expanduser()), ident["company"],
                                       ident.get("req_id", ""), ident.get("role", ""), since)
         receipt_id = msg["id"] if msg else ""
-    row, _ = add(rows, dict(ident, link=link, date=date, status="Submitted"))
+    row, _ = add(rows, dict(ident, link=link, date=date, status="Applied"))
     old_notes = [n for n in row.get("notes", "").split(" | ")
                  if n and not n.startswith(READ_BACK) and n not in ("no receipt yet", NOT_FILLED)]
     notes = [READ_BACK + read_back] + old_notes + ([] if receipt_id else ["no receipt yet"]) + ([NOT_FILLED] if not_filled else [])
-    row.update({"status": "Submitted", "resume_used": resume_used or row.get("resume_used", ""),
+    row.update({"status": "Applied", "resume_used": resume_used or row.get("resume_used", ""),
                 "receipt_id": receipt_id or row.get("receipt_id", ""), "notes": " | ".join(notes),
                 "applied_at": applied_at or row.get("applied_at", "") or dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()})
     for col, value in (("pay", pay), ("location", location)):
@@ -238,12 +249,30 @@ def reconcile(rows: list[dict], receipts: list[dict]) -> dict:
     return {"receipts_without_row": missing, "rows_missing_receipt": unreceipted, "matched": matched}
 
 
+def normalize_status(status: str) -> tuple[str, str]:
+    """(status, needs-you reason). Maps old names (Submitted) and splits "Needs you: <reason>"."""
+    status = (status or "").strip()
+    if status.lower().startswith("needs you"):
+        return "Needs you", status[len("needs you"):].lstrip(" :").strip()
+    status = ALIASES.get(status.lower(), status)
+    for s in STATUSES:
+        if s.lower() == status.lower():
+            return s, ""
+    raise ValueError(f"status must be one of {', '.join(STATUSES)} (or 'Needs you: <reason>'), got {status!r}")
+
+
 def _check_status(status: str) -> None:
-    if status in STATUSES:
-        return
-    if status.startswith(NEEDS_YOU) and status[len(NEEDS_YOU):].strip():
-        return
-    raise ValueError(f"status must be one of {', '.join(STATUSES)} or '{NEEDS_YOU}<reason>', got {status!r}")
+    normalize_status(status)
+
+
+def _apply_status(row: dict, status: str) -> None:
+    """Set a normalized status; a needs-you reason goes to the front of the notes."""
+    value, reason = normalize_status(status)
+    row["status"] = value
+    notes = [n for n in row.get("notes", "").split(" | ") if n and not n.lower().startswith("needs you: ")]
+    if value == "Needs you":
+        notes = ["needs you: " + (reason or "see the run log")] + notes
+    row["notes"] = " | ".join(notes)
 
 
 def main(argv: list[str] | None = None) -> int:

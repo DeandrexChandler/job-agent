@@ -51,9 +51,21 @@ class RowTests(unittest.TestCase):
     def test_needs_you_status(self):
         rows = []
         tc.add(rows, {"company": "Acme", "req_id": "R1"})
-        self.assertEqual(tc.update(rows, "Acme", "R1", "", {"status": "Needs you: captcha"})["status"], "Needs you: captcha")
-        with self.assertRaises(ValueError):
-            tc.update(rows, "Acme", "R1", "", {"status": "Needs you: "})
+        row = tc.update(rows, "Acme", "R1", "", {"status": "Needs you: captcha"})
+        self.assertEqual((row["status"], row["notes"]), ("Needs you", "needs you: captcha"))
+        row = tc.update(rows, "Acme", "R1", "", {"status": "Needs you: sign-in"})
+        self.assertEqual(row["notes"], "needs you: sign-in")  # replaced, not stacked
+        row = tc.update(rows, "Acme", "R1", "", {"status": "Applied"})
+        self.assertEqual((row["status"], row["notes"]), ("Applied", ""))
+
+    def test_old_submitted_name_still_works(self):
+        rows = [{"company": "Old", "req_id": "R0", "role": "x", "date": "2026-01-05", "status": "Submitted"}]
+        tc.add(rows, {"company": "Acme", "req_id": "R1", "status": "Submitted", "date": "2026-01-05"})
+        self.assertEqual(rows[-1]["status"], "Applied")
+        self.assertEqual(tc.count(rows, status="Applied"), 2)
+        self.assertEqual(tc.count(rows, status="Submitted"), 2)
+        tc.update(rows, "Acme", "R1", "", {"status": "accepted"})
+        self.assertEqual(rows[-1]["status"], "Accepted")
 
     def test_count_filters(self):
         rows = []
@@ -116,7 +128,7 @@ class RecordSubmitTests(unittest.TestCase):
         self.assertEqual(out.returncode, 0, out.stdout + out.stderr)
         row = tc.load(self.csv)[0]
         self.assertEqual(row["receipt_id"], self.msg["id"])
-        self.assertEqual(row["status"], "Submitted")
+        self.assertEqual(row["status"], "Applied")
         self.assertEqual(row["resume_used"], str(self.pdf))
         self.assertTrue(row["notes"].startswith("read-back: "))
         self.assertEqual(self.cli("audit").returncode, 0)
@@ -171,7 +183,7 @@ class LoopAdditions(unittest.TestCase):
         rows = []
         row = tc.record_submit(rows, {"company": "Acme", "req_id": "R7", "role": "SWE Intern"}, "", "",
                                receipt_id="msg-7", not_filled=True)
-        self.assertEqual(row["status"], "Submitted")
+        self.assertEqual(row["status"], "Applied")
         self.assertIn(tc.NOT_FILLED, row["notes"])
         self.assertEqual(tc.audit(rows), [])
         with self.assertRaises(ValueError):

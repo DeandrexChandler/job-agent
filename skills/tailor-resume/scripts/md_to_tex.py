@@ -140,7 +140,8 @@ def convert(md: str) -> str:
                 out += [f"        \\resumeItem{{{inline(b)}}}\n" for b in bullets]
                 out.append("      \\resumeItemListEnd\n")
         end = "  \\resumeSubHeadingListEnd"
-        out.append(end + ("\\vspace{\\eduadjust}\n\n" if key == "education" else "\n\n"))
+        # eduadjust evens out a section that ends on a heading line; one ending on bullets needs none.
+        out.append(end + ("\\vspace{\\eduadjust}\n\n" if key == "education" and not bullets else "\n\n"))
     out.append("\\end{document}\n")
     return "".join(out)
 

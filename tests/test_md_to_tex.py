@@ -56,6 +56,11 @@ class MdToTex(unittest.TestCase):
         self.assertNotIn("Kafka", tex)
         self.assertEqual(tex.count(r"\begin{itemize}"), tex.count(r"\end{itemize}"))
 
+    def test_eduadjust_only_when_education_ends_on_a_heading(self):
+        bare = "## Header\nA | b\n\n## Education\n### School | City\nDegree | 2028\n"
+        self.assertIn("\\vspace{\\eduadjust}", md_to_tex.convert(bare))
+        self.assertNotIn("\\vspace{\\eduadjust}", md_to_tex.convert(bare + "- **Coursework:** Data Structures\n"))
+
     def test_refuses_unconfirmed_bullets(self):
         with self.assertRaises(ValueError):
             md_to_tex.convert(MD + "- Drafted bullet <!-- confirm -->\n")

@@ -11,7 +11,7 @@ Python: commands below say `python3`. Use `python_cmd` from `profile/preferences
 
 Columns: `company, role, req_id, link, date, resume_used, status, receipt_id, notes, applied_at, pay, location`. For submitted jobs, `notes` starts with `read-back: <path to state/submissions/<job_key>.json>`; add later notes after it with ` | `. `receipt_id` is the confirmation email's message ID (or the portal's confirmation number), which is the proof the submission went through. `resume_used` is the real path of the uploaded file, never a placeholder such as "per queue".
 
-Statuses: `Discovered` (optional: tracked before it is filled), `Ready` (filled, waiting for the user to submit), `Submitted`, `Assessment`, `Interview`, `Offer`, `Rejected`, `Ghosted` (sent, no reply after a long wait; the user sets it), `Withdrawn`, and `Needs you: <reason>` for a parked job.
+Statuses: `Discovered` (optional: tracked before it is filled), `Ready` (filled, waiting for the user to submit), `Needs you` (parked; the reason leads the notes as `needs you: <reason>`), `Applied` (sent), `Assessment`, `Interview`, `Offer`, `Accepted` (an offer the user took; only the user sets it), `Rejected`, `Ghosted` (sent, no reply after a long wait; the user sets it), `Withdrawn`. Older names are still read: `Submitted` means `Applied`, and `Needs you: <reason>` is split into the `Needs you` status plus the reason in notes (the CSV script does this itself; write it that way by hand in Notion and Sheets).
 
 Unsubmitted jobs: with `tracker.rows_for_unsubmitted: true` (default) filled and parked jobs get `Ready` and `Needs you` rows. With `false`, only sent applications get rows: filled and parked forms stay in `state/queue.json` (`FILLED`, `NEEDS YOU`) until a receipt arrives, which keeps the tracker to what employers actually received.
 
@@ -32,11 +32,15 @@ python3 scripts/tracker_csv.py --file <csv_path> count --company "Acme" --since 
 ```
 
 **notion.** Needs the Notion MCP and `tracker.notion_database_url`. If the database does not exist, offer to create one with the columns above (`status` as a select with the statuses above). Search before create: query the database for the same company and req ID, and update that page instead of creating a duplicate. Notion gotchas:
-- To change the `status` select's options, use `notion-update-data-source` with `statements` (for example `ALTER COLUMN "status" SET SELECT('Submitted':green, 'Rejected':red, ...)`). Its `properties` and `schema` arguments are silently ignored.
+- To change the `status` select's options, use `notion-update-data-source` with `statements` (for example `ALTER COLUMN "status" SET SELECT('Applied':blue, 'Rejected':red, ...)`). Its `properties` and `schema` arguments are silently ignored.
 - Several Notion and Gmail connector tools publish empty argument schemas, and a wrong argument name returns a generic error that looks like a dead server. Read the tool's error text (it often names the allowed values), or call a no-argument tool on the same server, before deciding the connector is down.
 - Confirm a scoped search works by searching a value you know is present before trusting an empty result.
 
-**sheets.** Needs a Google Sheets MCP and `tracker.sheets_url`. Header row is the column list. Read the sheet, match company plus req ID, then update that row or append.
+**sheets.** Needs a Google Sheets MCP and `tracker.sheets_url`. Use the first tab, whatever its name: read its title from the spreadsheet metadata, never assume one. Read the sheet, match company plus req ID, then update that row or append.
+- The header row may use display names instead of the column keys. Match each header case-insensitively by key or display name: `company` Company, `role` Role, `req_id` Req ID, `link` Link, `date` Date, `resume_used` Resume, `status` Status, `receipt_id` Receipt, `notes` Notes, `applied_at` Applied At, `pay` Pay, `location` Location. Never rename, reorder or restyle the header row, and write each value to the column whose header matches it.
+- The Status column may have a dropdown: write exactly one of the statuses above, spelled as listed.
+- Append rows with values only (no formatting), so the sheet's own banding, colors and dropdowns apply.
+- Never change the spreadsheet's title, tab name, formatting, filters or column widths; those are the user's.
 
 For Notion and Sheets, keep the same dedupe and status rules as the CSV script.
 
@@ -44,7 +48,7 @@ For Notion and Sheets, keep the same dedupe and status rules as the CSV script.
 
 ## Receipt after submit
 
-Every pressed final control is recorded with ONE `record-submit` call, never with `add` plus a later `update`. It sets `Submitted`, the read-back note, the absolute resume path, and the receipt. After the last submit of a run, `audit` must exit 0.
+Every pressed final control is recorded with ONE `record-submit` call, never with `add` plus a later `update`. It sets `Applied`, the read-back note, the absolute resume path, and the receipt. After the last submit of a run, `audit` must exit 0.
 
 The email source is `email.receipts` in preferences: `gmail` (the default, through the Gmail MCP), `none`, or `mock` (the local test rig only).
 

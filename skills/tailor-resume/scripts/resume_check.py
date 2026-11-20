@@ -96,13 +96,15 @@ def tex_plain(s: str) -> str:
     """LaTeX fragment to the text a reader sees."""
     s = re.sub(r"\\projtitle\{[^}]*\}\{([^}]*)\}", r"\1", s)
     s = re.sub(r"\\href\{[^}]*\}\{", "{", s)
+    s = s.replace("$|$", "|")
+    s = re.sub(r"(?<!\\)\$", "", s)  # math-mode delimiters; an escaped \$ is a dollar sign the reader sees
     s = re.sub(r"\\([%&#_$])", r"\1", s)
-    s = s.replace("~", " ").replace("$|$", "|").replace("--", "-")
+    s = s.replace("~", " ").replace("--", "-")
     # Escaped symbols the reader sees as themselves (md_to_tex writes ~ and ^ this way).
     s = re.sub(r"\\textasciitilde(\{\}|\b)", "~", s)
     s = re.sub(r"\\textasciicircum(\{\}|\b)", "^", s)
     s = re.sub(r"\\[a-zA-Z]+\*?", "", s)
-    s = re.sub(r"[{}$]", "", s)
+    s = re.sub(r"[{}]", "", s)
     return re.sub(r"\s+", " ", s).strip()
 
 

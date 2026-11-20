@@ -175,6 +175,10 @@ class SelectOnly(unittest.TestCase):
         self.assertEqual(rc.norm_bullet(tex), rc.norm_bullet("Built an app (~5,000 lines of Swift) with data stored on-device"))
         self.assertEqual(rc.norm_bullet("team\u2019s app \u2014 v2"), rc.norm_bullet("team's app - v2"))
 
+    def test_latex_escaped_dollar_is_still_word_for_word(self):
+        tex = rc.tex_plain(r"Won 2nd place (\$2,000 in credits) at a hackathon")
+        self.assertEqual(rc.norm_bullet(tex), rc.norm_bullet("Won 2nd place ($2,000 in credits) at a hackathon"))
+
     def test_style_rules_become_warnings(self):
         master = one_project("Built a toy demo of a parser for 2,000 users")
         warnings = []

@@ -1,7 +1,7 @@
 {
   "name": "job-agent",
   "displayName": "Job Agent",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Apply while you sleep. Claude Code finds postings, tailors a one-page resume from your master, fills each application in your own Chrome, writes answers through a built-in humanizing layer and, if you want, in your own voice, and tracks the results. Stops at Submit by default.",
   "author": {
     "name": "Aziz Umarov",

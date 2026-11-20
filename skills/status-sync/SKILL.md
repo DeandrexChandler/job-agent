@@ -26,7 +26,7 @@ Python: commands below say `python3`. Use `python_cmd` from `profile/preferences
    - Never create a row from this skill. An unmatched message goes in the report.
    - Use the newest message per row. A later rejection on the same req overrides an older assessment invite, and a later interview overrides an older rejection only if it clearly refers to the same req.
    - An assessment or interview invite proves the req was live on that date, nothing more. Before reporting one as waiting on the user, follow the chain forward on that req ID for a later rejection, and check for a completion email ("Completed", "thank you for completing") and the user's own notes on assessments already done or skipped (`state/assessments.md`, one line per req, kept by you when the user tells you).
-   - Do not move `Offer` or `Withdrawn` to anything else without asking.
+   - Do not move `Offer`, `Accepted` or `Withdrawn` to anything else without asking. Only the user sets `Accepted`.
    - Add the message date and a short reason to `notes`, after what is already there. Never drop earlier notes: apply-fill keeps the path of the pre-submit read-back there.
 6. Save the new `last_sync` only after all updates succeed.
 

@@ -96,7 +96,7 @@ SEED_ROWS = [
     {"company": "Wayne Enterprises", "role": "Software Engineer Intern", "req_id": "GH-6006",
      "link": "http://127.0.0.1/gh/wayne/jobs/f6f0c0de0006", "status": "Rejected", "notes": "seeded: earlier run"},
     {"company": "Stark Industries", "role": "Platform Engineer Intern", "req_id": "GH-7001",
-     "link": "http://127.0.0.1/gh/stark/jobs/old", "status": "Submitted", "notes": "seeded: earlier run"},
+     "link": "http://127.0.0.1/gh/stark/jobs/old", "status": "Applied", "notes": "seeded: earlier run"},
 ]
 
 
@@ -139,9 +139,9 @@ def _notifications(ws: Path) -> list[dict]:
 
 
 EXPECT = {
-    "applied": {"Acme Robotics": "Submitted", "Globex": "Submitted", "Initech": "Needs you: captcha"},
-    "synced": {"Acme Robotics": "Assessment", "Globex": "Interview", "Initech": "Needs you: captcha"},
-    "final": {"Acme Robotics": "Rejected", "Globex": "Interview", "Initech": "Needs you: captcha"},
+    "applied": {"Acme Robotics": "Applied", "Globex": "Applied", "Initech": "Needs you"},
+    "synced": {"Acme Robotics": "Assessment", "Globex": "Interview", "Initech": "Needs you"},
+    "final": {"Acme Robotics": "Rejected", "Globex": "Interview", "Initech": "Needs you"},
 }
 
 

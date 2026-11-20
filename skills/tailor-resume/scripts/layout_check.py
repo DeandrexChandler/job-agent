@@ -99,8 +99,11 @@ def extract(pdf_path: str) -> Page:
             spans = [s for s in line["spans"] if s["text"].strip()]
             if not spans:
                 continue
-            # The longest span sets the baseline: the bullet glyph sits off the text baseline.
-            base = round(max(spans, key=lambda s: len(s["text"].strip()))["origin"][1], 1)
+            # The longest span sets the baseline: the bullet glyph sits off the text baseline, and PyMuPDF
+            # can report the span after the glyph at the glyph's origin, so read it from bbox and descender.
+            longest = max(spans, key=lambda s: len(s["text"].strip()))
+            base = round(longest["bbox"][3] + longest.get("descender", 0) * longest["size"], 1) \
+                if "descender" in longest else round(longest["origin"][1], 1)
             key = next((k for k in rows if abs(k - base) < 0.6), base)
             r = rows.setdefault(key, {"parts": [], "spans": [], "size": 0.0})
             r["parts"].append((line["bbox"][0], line["bbox"][2], "".join(s["text"] for s in spans).strip(),
@@ -165,7 +168,7 @@ def classify(rows: list[Row]) -> None:
         elif abs(r.x0 - BULLET_LEFT) < 2:
             r.kind = "wrap"
         elif section == "TechnicalSkills":
-            r.kind = "skill" if ":" in t[:20] else "orphan"
+            r.kind = "skill" if ":" in t[:40] else "orphan"  # labels like "Frameworks & Libraries:" run past 20 chars
         elif abs(r.x0 - ENTRY_LEFT) < 2:
             r.kind = "entry"
         else:

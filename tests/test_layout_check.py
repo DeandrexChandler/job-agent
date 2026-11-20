@@ -104,6 +104,11 @@ class Fails(unittest.TestCase):
             d["rows"].append(extra)
         self.assertFlags(m, "hanging line in TechnicalSkills")
 
+    def test_long_skills_label_is_a_row(self):
+        def m(d):
+            d["rows"][-1]["parts"][0][2] = "Frameworks & Libraries: " + d["rows"][-1]["parts"][0][2].split(":", 1)[-1]
+        self.assertNotIn("hanging line", " ".join(bad(page(m))))
+
     def test_last_skills_row_short(self):
         def m(d):
             d["rows"][-1]["parts"][-1][1] = 400.0

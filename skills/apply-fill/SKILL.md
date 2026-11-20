@@ -65,7 +65,7 @@ Events (`never_submit` on the queue entry, for RSVP and registration forms): fil
 
 Opt-in (`auto_submit: true`), all guardrails still apply:
 - `dry_run: true` means fill and read back, never press the final control.
-- Daily cap: `tracker_csv.py count --status Submitted --date today` must be below `caps.daily_submit_cap`.
+- Daily cap: `tracker_csv.py count --status Applied --date today` must be below `caps.daily_submit_cap`.
 - Per-company cap: count for the company within its window must be below the cap.
 - Never submit on a page with a CAPTCHA (park it instead), a sign-in wall, a GenAI ban or a GenAI flag (park it as `Needs you: GenAI rule` so the user decides), an empty required essay (with `written_answers: leave` or `writer`), an event RSVP, or any unresolved error.
 - Pre-submit read-back: snapshot the form, write every question and answer to `state/submissions/<job_key>.json`, and put its path in the tracker `notes` as exactly `read-back: <path>` (that prefix, with the hyphen; status-sync and the checks look for it).
